@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum GlobalRole {
+  SUPER_ADMIN
+  VILLAGE_MEMBER
+  CHOKHLA_MEMBER
+}
+
+enum OccupationType {
+  AGRICULTURE
+  BUSINESS
+  SERVICE
+  LABOUR
+  STUDENT
+  UNEMPLOYED
+  OTHER
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  choklaId     String
+  globalRole   GlobalRole
+  fullName     String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  refreshToken String?
+  lastLogin    DateTime?
+  lastLogout   DateTime?
+  villageId    String?
+  mobileNumber String?
+  village      Village?   @relation(fields: [villageId], references: [id])
+
+  @@map("users")
+}
+
+model Chakola {
+  id            String   @id @default(uuid())
+  name          String
+  adhyaksh      String?
+  contactNumber String?
+  state         String?
+  district      String?
+  villageName   String?
+  createdDate   DateTime @default(now())
+  updatedDate   DateTime @updatedAt
+
+  villages Village[]
+
+  @@map("chakola")
+}
+
+model Village {
+  id                             String   @id @default(uuid())
+  name                           String
+  villageMemberName              String?
+  mobileNumber                   String?
+  age                            Int?
+  email                          String?
+  tehsil                         String?
+  district                       String?
+  state                          String?
+  isVillageHaveSchool            Boolean  @default(false)
+  isVillageHavePrimaryHealthCare Boolean  @default(false)
+  isVillageHaveCommunityHall     Boolean  @default(false)
+  longitude                      Float?
+  latitude                       Float?
+  choklaId                       String
+  chakola                        Chakola  @relation(fields: [choklaId], references: [id])
+  families                       Family[]
+  people                         Person[]
+
+  createdDate DateTime @default(now())
+  updatedDate DateTime @updatedAt
+  User        User[]
+
+  @@map("village")
+}
+
+model Family {
+  id             String   @id @default(uuid())
+  mukhiyaName    String
+  currentAddress String
+  status         String
+  economicStatus String
+  villageId      String
+  village        Village  @relation(fields: [villageId], references: [id])
+  Person         Person[]
+  chakolaId      String?
+  createdDate    DateTime @default(now())
+  updatedDate    DateTime @updatedAt
+  longitude      Float?
+  latitude       Float?
+
+  @@map("family")
+}
+
+model Person {
+  id                      String   @id @default(uuid())
+  name                    String
+  aadhaarNumber           String
+  dateOfBirth             DateTime
+  age                     Int
+  gender                  Gender
+  relation                String
+  maritalStatus           String
+  religion                String
+  caste                   String
+  disability              Boolean
+  bloodGroup              String
+  mobileNumber            String
+  email                   String
+  permanentAddress        String
+  currentAddress          String
+  isCurrentAddressInIndia Boolean
+  currentCountry          String   @default("India")
+  village                 String
+  pincode                 String
+  district                String
+  state                   String
+  isStudent               Boolean
+  educationLevel          String
+  classCompleted          String
+  currentClass            String?
+  collegeCourse           String
+  institutionName         String
+  enrollmentStatus        String?
+  schoolName              String?
+  higherEducationType     String?
+  isEmployed              Boolean
+  occupation              String
+  monthlyIncome           Float
+  incomeSource            String
+  isIncomeSourceInIndia   Boolean
+  incomeSourceCountry     String
+  serviceType             String
+  landOwned               Float
+  livestock               String
+  houseType               String
+  houseOwnership          String
+  hasElectricity          Boolean
+  waterSource             String
+  hasToilet               Boolean
+  cookingFuel             String
+  hasHealthIssues         Boolean
+  chronicDisease          String
+  isVaccinated            Boolean
+  hasHealthInsurance      Boolean
+  hasSmartphone           Boolean
+  hasInternet             Boolean
+  hasBankAccount          Boolean
+  hasJanDhan              Boolean
+  isMukhiya               Boolean
+  welfareSchemes          String[]
+  createdDate             DateTime @default(now())
+  updatedDate             DateTime @updatedAt
+  dropoutReason           String?
+
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id])
+
+  villageId  String?
+  villageRel Village? @relation(fields: [villageId], references: [id])
+
+  @@map("person")
+}
