@@ -93,46 +93,55 @@ model Village {
 }
 
 model Family {
-  id             String   @id @default(uuid())
-  mukhiyaName    String
-  currentAddress String
-  status         String
-  economicStatus String
-  villageId      String
-  village        Village  @relation(fields: [villageId], references: [id])
-  Person         Person[]
-  chakolaId      String?
-  createdDate    DateTime @default(now())
-  updatedDate    DateTime @updatedAt
-  longitude      Float?
-  latitude       Float?
+  id               String   @id @default(uuid())
+  mukhiyaName      String
+  currentAddress   String
+  status           String
+  economicStatus   String
+  villageId        String
+  village          Village  @relation(fields: [villageId], references: [id])
+  Person           Person[]
+  chakolaId        String?
+  createdDate      DateTime @default(now())
+  updatedDate      DateTime @updatedAt
+  longitude        Float?
+  latitude         Float?
+  anyComment       String?
+  familyDistrict   String
+  familyState      String
+  familyPincode    String
+  permanentAddress String?
 
   @@map("family")
 }
 
 model Person {
-  id                      String   @id @default(uuid())
-  name                    String
-  aadhaarNumber           String
-  dateOfBirth             DateTime
-  age                     Int
-  gender                  Gender
-  relation                String
-  maritalStatus           String
-  religion                String
-  caste                   String
-  disability              Boolean
-  bloodGroup              String
-  mobileNumber            String
-  email                   String
+  // persnal details
+  id            String   @id @default(uuid())
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  age           Int
+  gender        Gender
+  relation      String
+  maritalStatus String
+  gotra         String
+  disability    Boolean
+  bloodGroup    String
+  mobileNumber  String
+  email         String
+
+  // address details
   permanentAddress        String
   currentAddress          String
-  isCurrentAddressInIndia Boolean
-  currentCountry          String   @default("India")
-  village                 String
-  pincode                 String
-  district                String
   state                   String
+  district                String
+  pincode                 String
+  village                 String
+  isCurrentAddressInIndia Boolean
+  currentCountry          String  @default("India")
+
+  // === Educational Details ===
   isStudent               Boolean
   educationLevel          String
   classCompleted          String
@@ -142,40 +151,93 @@ model Person {
   enrollmentStatus        String?
   schoolName              String?
   higherEducationType     String?
-  isEmployed              Boolean
-  occupation              String
-  monthlyIncome           Float
-  incomeSource            String
-  isIncomeSourceInIndia   Boolean
-  incomeSourceCountry     String
-  serviceType             String
-  landOwned               Float
-  livestock               String
-  houseType               String
-  houseOwnership          String
-  hasElectricity          Boolean
-  waterSource             String
-  hasToilet               Boolean
-  cookingFuel             String
-  hasHealthIssues         Boolean
-  chronicDisease          String
-  isVaccinated            Boolean
-  hasHealthInsurance      Boolean
-  hasSmartphone           Boolean
-  hasInternet             Boolean
-  hasBankAccount          Boolean
-  hasJanDhan              Boolean
-  isMukhiya               Boolean
-  welfareSchemes          String[]
-  createdDate             DateTime @default(now())
-  updatedDate             DateTime @updatedAt
-  dropoutReason           String?
+  currentEducationCity    String?
+  currentEducationCountry String?
+  isHelpRequiredFromSamaj Boolean
 
-  familyId String
-  family   Family @relation(fields: [familyId], references: [id])
+  isCurrentlyEnrolled Boolean?
+  dropoutReason       String?
+  educationMode       String?
+  isStudyingAbroad    Boolean?
+  scholarshipReceived Boolean?
+  scholarshipDetails  String?
+  boardOrUniversity   String?
+  yearOfPassing       Int?
+  fieldOfStudy        String?
 
-  villageId  String?
-  villageRel Village? @relation(fields: [villageId], references: [id])
+  // employement details 
+  isEmployed          Boolean @default(false)
+  occupationType      String?
+  employmentStatus    String?
+  monthlyIncome       Float?
+  incomeSourceCountry Boolean @default(false)
+  countryName         String?
+
+  jobCategory              String?
+  employerOrganizationName String?
+  isGovernmentJob          Boolean? @default(false)
+  jobPosition              String?
+  jobType                  String?
+  workExperienceYears      Int?
+
+  isSelfEmployed       Boolean? @default(false)
+  selfEmployedJobType  String?
+  nameOfBusiness       String?
+  businessCategory     String?
+  sizeOfBusiness       String?
+  businessRegistration Boolean? @default(false)
+  willingToHirePeople  Boolean? @default(false)
+
+  // Added missing business fields:
+  businessType       String?
+  customBusinessType String?
+  numberOfEmployees  Int?
+  needsEmployees     Boolean? @default(false)
+
+  occupationState      String?
+  occupationCity       String?
+  preferredJobLocation String?
+  isOpenToRelocate     Boolean? @default(false)
+  workingHoursPerWeek  Int?
+  hasAdditionalSkills  Boolean? @default(false)
+
+  // living status
+  livestock      String
+  landOwned      Float
+  houseType      String
+  houseOwnership String
+  hasElectricity Boolean
+  waterSource    String
+  hasToilet      Boolean
+  cookingFuel    String
+
+  // health issue
+  hasHealthIssues                  Boolean
+  chronicDisease                   String
+  isVaccinated                     Boolean
+  hasHealthInsurance               Boolean
+  isInterestedInFutureHealthPolicy Boolean @default(false)
+
+  // wellfare schemes and survey 
+  hasSmartphone                    Boolean
+  hasInternet                      Boolean
+  hasBankAccount                   Boolean
+  hasJanDhan                       Boolean
+  isMukhiya                        Boolean
+  welfareSchemes                   String[]
+  isInterestedInFutureSamuhikVivah Boolean  @default(false)
+  vehicleType                      String
+
+  // relation with other table 
+  familyId    String
+  createdDate DateTime @default(now())
+  updatedDate DateTime @updatedAt
+  family      Family   @relation(fields: [familyId], references: [id])
+  villageId   String?
+  villageRel  Village? @relation(fields: [villageId], references: [id])
+
+  // added missing custom job sector field
+  customJobSearchSector String?
 
   @@map("person")
 }

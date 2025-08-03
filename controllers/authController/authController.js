@@ -13,6 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || "yoursecretkey";
 // Register
 const register = async (req, res) => {
     const { email, password, fullName, choklaId, globalRole } = req.body;
+    if (!email || !password || !fullName || !choklaId || !globalRole) {
+        return res.status(400).json({
+            error: 'Missing required fields. Please provide email, password, fullName, choklaId, and globalRole.'
+        });
+    }
 
     try {
         const existingUser = await findUserByEmail(email);

@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
+
 
 // Load environment variables
 dotenv.config();
@@ -38,10 +38,11 @@ app.get('/', (req, res) => {
 });
 
 // 404 Not Found handler
-app.use((req, res, next) => {
-    res.status(404).json({
-        status: 'error',
-        message: 'Route not found',
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
     });
 });
 
@@ -54,5 +55,7 @@ app.use((err, req, res, next) => {
     });
 });
 
+app.listen(5000, console.log("listin on the ", 5000))
+
 // ...existing code...
-module.exports = app;
+// module.exports = app;

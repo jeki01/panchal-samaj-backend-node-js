@@ -3,8 +3,9 @@ const familyService = require('../../services/familyService');
 exports.createFamily = async (req, res, next) => {
     try {
         const family = await familyService.createFamily(req.body);
-        res.status(201).json(family);
+        res.status(201).json({ success: true, data: family });
     } catch (err) {
+        console.error("Error in createFamily controller:", err);
         next(err);
     }
 };
@@ -30,6 +31,7 @@ exports.getAllFamilies = async (req, res, next) => {
 
 
 exports.updateFamily = async (req, res, next) => {
+    console.log(req)
     try {
         const family = await familyService.updateFamily(req.params.id, req.body);
         res.json(family);

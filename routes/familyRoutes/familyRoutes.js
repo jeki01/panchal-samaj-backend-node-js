@@ -5,7 +5,7 @@ const familyController = require('../../controllers/familyController/familyContr
 router.post('/create', familyController.createFamily);
 router.get('/', familyController.getAllFamilies);
 router.get('/:id', familyController.getFamilyById);
-router.put('update/:id', familyController.updateFamily);
+router.put('/update/:id', familyController.updateFamily);
 router.delete('/delete/:id', familyController.deleteFamily);
 router.put('/bulk-update', familyController.updateManyFamilies); // Bulk update route
 

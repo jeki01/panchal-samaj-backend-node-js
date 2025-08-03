@@ -90,8 +90,6 @@ exports.getVillageWithChokhlaId = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-
-    console.log(chokhlaid, req.params)
 };
 
 

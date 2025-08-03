@@ -1,120 +1,138 @@
-// const { PrismaClient, Gender } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// const prisma = new PrismaClient();
+async function main() {
+    // Step 1: Create Chakola
+    const chakola = await prisma.chakola.create({
+        data: {
+            name: "Chakola A",
+            adhyaksh: "Shyam Bhai",
+            contactNumber: "9876543210",
+            state: "Gujarat",
+            district: "Surat",
+            villageName: "Greenfield Village"
+        }
+    });
 
-// function getRandomItem(arr) {
-//     return arr[Math.floor(Math.random() * arr.length)];
-// }
+    // Step 2: Create Village
+    const village = await prisma.village.create({
+        data: {
+            name: "Greenfield Village",
+            choklaId: chakola.id,
+            district: "Surat",
+            state: "Gujarat"
+        }
+    });
 
-// async function main() {
-//     for (let i = 1; i <= 14; i++) {
-//         const chakola = await prisma.chakola.create({
-//             data: {
-//                 name: `Chakola ${i}`,
-//                 adhyaksh: `Adhyaksh ${i}`,
-//                 contactNumber: `98765432${String(i).padStart(2, '0')}`,
-//                 state: 'Madhya Pradesh',
-//                 district: `District ${i}`,
-//                 villageName: `VillageName ${i}`,
-//             },
-//         });
+    // Step 3: Create Family
+    const family = await prisma.family.create({
+        data: {
+            mukhiyaName: "Ramesh Patel",
+            currentAddress: "123 Main Street",
+            status: "Active",
+            economicStatus: "Middle",
+            villageId: village.id,
+            familyDistrict: "Surat",
+            familyState: "Gujarat",
+            familyPincode: "395001",
+            permanentAddress: "loskd ksdksd"
+        }
+    });
 
-//         for (let j = 1; j <= 5; j++) {
-//             const village = await prisma.village.create({
-//                 data: {
-//                     name: `Village ${i}-${j}`,
-//                     villageMemberName: `Member ${i}-${j}`,
-//                     mobileNumber: `90000000${i}${j}`,
-//                     age: 50,
-//                     email: `village${i}${j}@example.com`,
-//                     tehsil: `Tehsil ${i}`,
-//                     district: `District ${i}`,
-//                     state: 'Madhya Pradesh',
-//                     choklaId: chakola.id,
-//                 },
-//             });
+    // Step 4: Create Person
+    await prisma.person.create({
+        data: {
+            firstName: "Ramesh",
+            lastName: "Patel",
+            dateOfBirth: new Date("1980-05-12"),
+            age: 44,
+            gender: "MALE",
+            relation: "Mukhiya",
+            maritalStatus: "Married",
+            gotra: "Vashishtha",
+            disability: false,
+            bloodGroup: "B+",
+            mobileNumber: "9876543210",
+            email: "ramesh@example.com",
+            permanentAddress: "123 Main Street",
+            currentAddress: "123 Main Street, Village Center",
+            state: "Gujarat",
+            district: "Surat",
+            pincode: "395001",
+            village: "Greenfield Village",
+            isCurrentAddressInIndia: true,
+            currentCountry: "India",
+            isStudent: false,
+            educationLevel: "Graduate",
+            classCompleted: "12th",
+            collegeCourse: "B.Com",
+            institutionName: "Gujarat University",
+            enrollmentStatus: "Completed",
+            schoolName: "Varachha High School",
+            higherEducationType: "UG",
+            currentEducationCity: "Surat",
+            currentEducationCountry: "India",
+            isHelpRequiredFromSamaj: false,
+            isCurrentlyEnrolled: false,
+            educationMode: "Regular",
+            isStudyingAbroad: false,
+            scholarshipReceived: false,
+            boardOrUniversity: "GSEB",
+            yearOfPassing: 2000,
+            fieldOfStudy: "Commerce",
+            isEmployed: true,
+            occupationType: "Business",
+            employmentStatus: "Self-employed",
+            monthlyIncome: 30000,
+            incomeSourceCountry: false,
+            workExperienceYears: 10,
+            isSelfEmployed: true,
+            selfEmployedJobType: "Retailer",
+            nameOfBusiness: "Patel Kirana Store",
+            businessCategory: "Retail",
+            sizeOfBusiness: "Small",
+            businessRegistration: true,
+            willingToHirePeople: true,
+            occupationState: "Gujarat",
+            occupationCity: "Surat",
+            preferredJobLocation: "Surat",
+            isOpenToRelocate: false,
+            workingHoursPerWeek: 60,
+            hasAdditionalSkills: true,
+            livestock: "Cow, Goat",
+            landOwned: 2.5,
+            houseType: "Pucca",
+            houseOwnership: "Owned",
+            hasElectricity: true,
+            waterSource: "Well",
+            hasToilet: true,
+            cookingFuel: "LPG",
+            hasHealthIssues: false,
+            chronicDisease: "",
+            isVaccinated: true,
+            hasHealthInsurance: true,
+            isInterestedInFutureHealthPolicy: false,
+            hasSmartphone: true,
+            hasInternet: true,
+            hasBankAccount: true,
+            hasJanDhan: true,
+            isMukhiya: true,
+            welfareSchemes: ["Scheme1", "Scheme2"],
+            isInterestedInFutureSamuhikVivah: false,
+            vehicleType: "TWO_WHEELER",
+            familyId: family.id,
+            villageId: village.id
+        }
+    });
 
-//             for (let k = 1; k <= 5; k++) {
-//                 const family = await prisma.family.create({
-//                     data: {
-//                         mukhiyaName: `Mukhiya ${i}-${j}-${k}`,
-//                         currentAddress: `Address ${i}-${j}-${k}`,
-//                         status: 'Active',
-//                         economicStatus: 'Middle Class',
-//                         villageId: village.id,
-//                     },
-//                 });
+    console.log("✅ Seed completed successfully.");
+}
 
-//                 for (let l = 1; l <= 4; l++) {
-//                     await prisma.person.create({
-//                         data: {
-//                             name: `Person ${i}-${j}-${k}-${l}`,
-//                             aadhaarNumber: `12345678${i}${j}${k}${l}`,
-//                             dateOfBirth: new Date(`1990-01-${(l % 28) + 1}`),
-//                             age: 2025 - 1990,
-//                             gender: getRandomItem([Gender.MALE, Gender.FEMALE, Gender.OTHER]),
-//                             relation: 'Family Member',
-//                             maritalStatus: 'Single',
-//                             religion: 'Hindu',
-//                             caste: 'General',
-//                             disability: false,
-//                             bloodGroup: 'O+',
-//                             mobileNumber: `99999999${l}${k}`,
-//                             email: `person${i}${j}${k}${l}@example.com`,
-//                             permanentAddress: `Village ${i}-${j}`,
-//                             currentAddress: `Village ${i}-${j}`,
-//                             isCurrentAddressInIndia: true,
-//                             village: village.name,
-//                             pincode: '462001',
-//                             district: `District ${i}`,
-//                             state: 'Madhya Pradesh',
-//                             isStudent: l % 2 === 0,
-//                             educationLevel: 'Graduate',
-//                             classCompleted: '12',
-//                             collegeCourse: 'B.A.',
-//                             institutionName: 'Govt College',
-//                             enrollmentStatus: 'Active',
-//                             isEmployed: l % 2 !== 0,
-//                             occupation: 'Farming',
-//                             monthlyIncome: 12000 + l * 1000,
-//                             incomeSource: 'Agriculture',
-//                             isIncomeSourceInIndia: true,
-//                             incomeSourceCountry: 'India',
-//                             serviceType: 'Self-employed',
-//                             landOwned: 2,
-//                             livestock: 'Cows',
-//                             houseType: 'Pucca',
-//                             houseOwnership: 'Owned',
-//                             hasElectricity: true,
-//                             waterSource: 'Well',
-//                             hasToilet: true,
-//                             cookingFuel: 'LPG',
-//                             hasHealthIssues: false,
-//                             chronicDisease: '',
-//                             isVaccinated: true,
-//                             hasHealthInsurance: true,
-//                             hasSmartphone: true,
-//                             hasInternet: true,
-//                             hasBankAccount: true,
-//                             hasJanDhan: true,
-//                             isMukhiya: false,
-//                             welfareSchemes: ['PM-KISAN'],
-//                             familyId: family.id,
-//                             villageId: village.id,
-//                         },
-//                     });
-//                 }
-//             }
-//         }
-//     }
-
-//     console.log('✅ Seeded 14 Chakolas, 70 Villages, 350 Families, 1400 People');
-// }
-
-// main()
-//     .then(() => prisma.$disconnect())
-//     .catch((e) => {
-//         console.error('❌ Seed failed:', e);
-//         prisma.$disconnect();
-//         process.exit(1);
-//     });
+main()
+    .catch((e) => {
+        console.error("❌ Error seeding data:", e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });
