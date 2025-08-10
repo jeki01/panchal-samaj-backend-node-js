@@ -1,52 +1,55 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
+const fs = require('fs');
 
-let client;
-let clientReady = false;
+let sock;
+let ready = false;
 
-const initializeWhatsApp = () => {
-    if (client) return client;
+const initializeWhatsApp = async () => {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
 
-    console.log('Initializing WhatsApp...');
-
-    client = new Client({
-        authStrategy: new LocalAuth(),
+    sock = makeWASocket({
+        auth: state,
+        // ⛔️ DEPRECATED: printQRInTerminal: true,
     });
 
-    client.on('qr', (qr) => {
-        console.log('Scan the QR code below:');
-        qrcode.generate(qr, { small: true });
-    });
+    sock.ev.on('creds.update', saveCreds);
 
-    client.on('ready', () => {
-        console.log('✅ WhatsApp client is ready!');
-        clientReady = true;
-    });
+    // ✅ Handle QR manually
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect, qr } = update;
 
-    client.on('auth_failure', (msg) => {
-        console.error('❌ Authentication failure:', msg);
-    });
+        if (qr) {
+            console.log('📱 Scan this QR Code to log in:\n');
+            console.log(qr); // <- This is the raw QR string
+        }
 
-    client.on('disconnected', (reason) => {
-        console.log('❌ WhatsApp client disconnected:', reason);
-        clientReady = false;
+        if (connection === 'close') {
+            const shouldReconnect =
+                lastDisconnect?.error instanceof Boom &&
+                lastDisconnect.error.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log('❌ Connection closed. Reconnecting:', shouldReconnect);
+            if (shouldReconnect) initializeWhatsApp();
+        } else if (connection === 'open') {
+            console.log('✅ WhatsApp is ready');
+            ready = true;
+        }
     });
-
-    client.initialize();
-    return client;
 };
 
-const sendMessage = async (number, message) => {
-    const chatId = number + '@c.us';
+const sendMessage = async (number, text) => {
+    const phone = number.startsWith('91') ? number : `91${number}`;
+    const jid = `${phone}@s.whatsapp.net`;
+
     try {
-        const result = await client.sendMessage(chatId, message);
-        return { success: true, result };
+        await sock.sendMessage(jid, { text });
+        return { success: true, result: 'Message sent' };
     } catch (error) {
         return { success: false, error };
     }
 };
 
-const isClientReady = () => clientReady;
+const isClientReady = () => ready;
 
 module.exports = {
     initializeWhatsApp,
