@@ -2,7 +2,7 @@ const prisma = require('../../db/prisma');
 const chakolaService = require('../../services/chakolaService');
 const villageService = require('../../services/villageService');
 const { hashPassword } = require('../../utils/hash');
-
+const { sendMessage } = require('../../services/whatsappService');
 exports.getAllChakolas = async (req, res, next) => {
     try {
         const chakolas = await chakolaService.fetchAllChakolas();
@@ -16,6 +16,7 @@ exports.getChokhlaById = async (req, res, next) => {
     const id = req.params.id;
     try {
         const chokhla = await chakolaService.fetchChokhlaById(id);
+
         if (!chokhla) {
             return res.status(404).json({ message: `Chokhla with id ${id} not found.` });
         }
@@ -39,7 +40,6 @@ exports.creteChokhla = async (req, res, next) => {
 
     try {
         const hashedPassword = await hashPassword(password);
-
         const result = await prisma.$transaction(async (tx) => {
             const chokhla = await tx.chakola.create({
                 data: {
@@ -64,8 +64,20 @@ exports.creteChokhla = async (req, res, next) => {
 
             return { chokhla, user };
         });
+        let formattedNumber = contactNumber;
+        if (!formattedNumber.startsWith('91')) {
+            formattedNumber = '91' + formattedNumber;
+        }
+        const msg = chokhlaMessage(name, email, password);
+        const whatsappResponse = await sendMessage(formattedNumber, msg);
+        if (!whatsappResponse.success) {
+            console.warn('⚠️ WhatsApp message failed:', whatsappResponse.error.message);
+        }
 
-        res.status(201).json(result);
+        res.status(201).json({
+            ...result,
+            whatsappSent: whatsappResponse.success,
+        });
     } catch (err) {
         next(err);
     }

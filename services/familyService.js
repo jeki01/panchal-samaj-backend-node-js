@@ -20,14 +20,12 @@ exports.createFamily = async (data) => {
                     anyComment: data.anyComment || null
                 },
             });
-            console.log(family)
 
-            const membersWithFamilyId = data.members.map(({ ...member }) => {
-
+            const membersWithFamilyId = data.members.map((member) => {
                 return {
                     ...member,
-
                     familyId: family.id,
+                    villageId: data.villageId,
                 };
             });
 

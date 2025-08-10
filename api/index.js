@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
-
 // Load environment variables
 dotenv.config();
 
@@ -15,9 +14,18 @@ const villageRoutes = require('../routes/villageRoutes/villageRoute');
 const authRoute = require('../routes/authRoute/authRoute');
 const usersRoute = require('../routes/usersRoute/usersRoute');
 
+const {
+    sendMessage,
+    initializeWhatsApp,
+    isClientReady
+} = require('../services/whatsappService');
+
 // App setup
 const app = express();
 const corsOptions = { origin: '*' };
+
+// Initialize WhatsApp
+initializeWhatsApp();
 
 // Middleware
 app.use(cors(corsOptions));
@@ -37,16 +45,39 @@ app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-// 404 Not Found handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || 'Internal Server Error',
-    });
+// WhatsApp send-message route
+app.post('/send-message', async (req, res) => {
+    console.log('Client Ready:', isClientReady());
+
+    if (!isClientReady()) {
+        return res.status(503).json({
+            success: false,
+            error: 'WhatsApp client not ready. Please scan the QR code and wait for readiness.',
+        });
+    }
+
+    const { number, message } = req.body;
+
+    if (!number || !message) {
+        return res.status(400).json({
+            success: false,
+            error: 'Number and message are required',
+        });
+    }
+
+    const result = await sendMessage(number, message);
+
+    if (result.success) {
+        res.json({ success: true, data: result.result });
+    } else {
+        res.status(500).json({
+            success: false,
+            error: result.error.message,
+        });
+    }
 });
 
-// Global Error Handler
+// Error handlers
 app.use((err, req, res, next) => {
     console.error('❌ Error:', err.stack);
     res.status(err.status || 500).json({
@@ -55,7 +86,10 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(5000, console.log("listin on the ", 5000))
+// Start server
+// app.listen(5000, () => {
+//     console.log("✅ Server listening on port 5000");
+// });
 
-// ...existing code...
-// module.exports = app;
+
+module.exports = app;

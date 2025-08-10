@@ -1,5 +1,7 @@
+const { villageMemberMessage } = require('../../constant');
 const prisma = require('../../db/prisma');
 const villageService = require('../../services/villageService');
+const { sendMessage } = require('../../services/whatsappService');
 const { hashPassword } = require('../../utils/hash');
 
 
@@ -60,10 +62,24 @@ exports.createVillage = async (req, res, next) => {
                 }
             });
 
+
             return { village, user };
         });
+        let formattedNumber = mobileNumber;
+        if (!formattedNumber.startsWith('91')) {
+            formattedNumber = '91' + formattedNumber;
+        }
+        const message = villageMemberMessage(name, email, password);
+        const whatsappResponse = await sendMessage(formattedNumber, message);
 
-        res.status(201).json(result);
+        if (!whatsappResponse.success) {
+            console.warn('⚠️ WhatsApp message failed:', whatsappResponse.error.message);
+        }
+        res.status(201).json({
+            ...result,
+            whatsappSent: whatsappResponse.success,
+        });
+
     } catch (err) {
         next(err);
     }
