@@ -42,12 +42,29 @@ exports.updateFamily = async (req, res, next) => {
 
 exports.deleteFamily = async (req, res, next) => {
     try {
-        await familyService.deleteFamily(req.params.id);
-        res.status(204).send();
+        const deleted = await familyService.deleteFamily(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                message: "Family not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Family deleted successfully"
+        });
     } catch (err) {
-        next(err);
+        console.error("Error deleting family:", err);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while deleting the family",
+            error: err.message
+        });
     }
 };
+
 
 exports.updateManyFamilies = async (req, res, next) => {
     try {

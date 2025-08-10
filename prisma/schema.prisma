@@ -93,30 +93,37 @@ model Village {
 }
 
 model Family {
-  id               String   @id @default(uuid())
-  mukhiyaName      String
-  currentAddress   String
-  status           String
-  economicStatus   String
-  villageId        String
-  village          Village  @relation(fields: [villageId], references: [id])
-  Person           Person[]
-  chakolaId        String?
-  createdDate      DateTime @default(now())
-  updatedDate      DateTime @updatedAt
-  longitude        Float?
-  latitude         Float?
-  anyComment       String?
-  familyDistrict   String
-  familyState      String
-  familyPincode    String
-  permanentAddress String?
+  id                      String   @id @default(uuid())
+  mukhiyaName             String
+  status                  String
+  economicStatus          String
+  villageId               String
+  village                 Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  Person                  Person[]
+  chakolaId               String?
+  createdDate             DateTime @default(now())
+  updatedDate             DateTime @updatedAt
+  longitude               Float?
+  latitude                Float?
+  anyComment              String?
+  //permanent address
+  permanentFamilyDistrict String?
+  permanentFamilyState    String?
+  permanentFamilyPincode  String?
+  permanentAddress        String?
+  permanentFamilyVillage  String?
+  //current address
+  currentFamilyDistrict   String?
+  currentFamilyState      String?
+  currentFamilyPincode    String?
+  currentAddress          String?
+  currentFamilyVillage    String?
 
   @@map("family")
 }
 
 model Person {
-  // persnal details
+  // personal details
   id            String   @id @default(uuid())
   firstName     String
   lastName      String
@@ -131,17 +138,24 @@ model Person {
   mobileNumber  String
   email         String
 
-  // address details
-  permanentAddress        String
-  currentAddress          String
-  state                   String
-  district                String
-  pincode                 String
-  village                 String
-  isCurrentAddressInIndia Boolean
-  currentCountry          String  @default("India")
+  // permanent address
+  personPermanentAddress  String?
+  personPermanentState    String?
+  personPermanentDistrict String?
+  personPermanentPincode  String?
+  personPermanentVillage  String?
 
-  // === Educational Details ===
+  // current address
+  personCurrentAddress  String?
+  personCurrentState    String?
+  personCurrentDistrict String?
+  personCurrentPincode  String?
+  personCurrentVillage  String?
+
+  isCurrentAddressInIndia Boolean?
+  currentCountry          String   @default("India")
+
+  // educational details
   isStudent               Boolean
   educationLevel          String
   classCompleted          String
@@ -165,14 +179,14 @@ model Person {
   yearOfPassing       Int?
   fieldOfStudy        String?
 
-  // employement details 
-  isEmployed          Boolean @default(false)
-  occupationType      String?
-  employmentStatus    String?
-  monthlyIncome       Float?
-  incomeSourceCountry Boolean @default(false)
-  countryName         String?
-
+  // employment details 
+  isEmployed               Boolean  @default(false)
+  occupationType           String?
+  employmentStatus         String?
+  monthlyIncome            Float?
+  incomeSourceCountry      Boolean  @default(false)
+  countryName              String?
+  preferredSector          String?
   jobCategory              String?
   employerOrganizationName String?
   isGovernmentJob          Boolean? @default(false)
@@ -180,26 +194,29 @@ model Person {
   jobType                  String?
   workExperienceYears      Int?
 
-  isSelfEmployed       Boolean? @default(false)
-  selfEmployedJobType  String?
-  nameOfBusiness       String?
-  businessCategory     String?
-  sizeOfBusiness       String?
-  businessRegistration Boolean? @default(false)
-  willingToHirePeople  Boolean? @default(false)
-
-  // Added missing business fields:
-  businessType       String?
-  customBusinessType String?
-  numberOfEmployees  Int?
-  needsEmployees     Boolean? @default(false)
-
-  occupationState      String?
-  occupationCity       String?
-  preferredJobLocation String?
-  isOpenToRelocate     Boolean? @default(false)
-  workingHoursPerWeek  Int?
-  hasAdditionalSkills  Boolean? @default(false)
+  isSelfEmployed          Boolean? @default(false)
+  selfEmployedJobType     String?
+  nameOfBusiness          String?
+  businessCategory        String?
+  sizeOfBusiness          String?
+  businessRegistration    Boolean? @default(false)
+  willingToHirePeople     Boolean? @default(false)
+  isSeekingJob            Boolean  @default(false)
+  incomeSourceCountryName String?
+  jobSearchSector         String?
+  wantsToGoAbroad         Boolean? @default(false)
+  hasPassport             Boolean? @default(false)
+  businessType            String?
+  customBusinessType      String?
+  numberOfEmployees       Int?
+  needsEmployees          Boolean? @default(false)
+  isBusinessRegistered    Boolean? @default(false)
+  occupationState         String?
+  occupationCity          String?
+  preferredJobLocation    String?
+  isOpenToRelocate        Boolean? @default(false)
+  workingHoursPerWeek     Int?
+  hasAdditionalSkills     Boolean? @default(false)
 
   // living status
   livestock      String
@@ -211,14 +228,14 @@ model Person {
   hasToilet      Boolean
   cookingFuel    String
 
-  // health issue
+  // health
   hasHealthIssues                  Boolean
   chronicDisease                   String
   isVaccinated                     Boolean
   hasHealthInsurance               Boolean
   isInterestedInFutureHealthPolicy Boolean @default(false)
 
-  // wellfare schemes and survey 
+  // welfare schemes
   hasSmartphone                    Boolean
   hasInternet                      Boolean
   hasBankAccount                   Boolean
@@ -228,15 +245,15 @@ model Person {
   isInterestedInFutureSamuhikVivah Boolean  @default(false)
   vehicleType                      String
 
-  // relation with other table 
-  familyId    String
+  // relations
+  familyId   String
+  family     Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  villageId  String?
+  villageRel Village? @relation(fields: [villageId], references: [id])
+
   createdDate DateTime @default(now())
   updatedDate DateTime @updatedAt
-  family      Family   @relation(fields: [familyId], references: [id])
-  villageId   String?
-  villageRel  Village? @relation(fields: [villageId], references: [id])
 
-  // added missing custom job sector field
   customJobSearchSector String?
 
   @@map("person")
