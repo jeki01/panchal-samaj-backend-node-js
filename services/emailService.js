@@ -19,7 +19,7 @@ class MailService {
             },
         });
 
-        this.sender = `"SMJ App" <${GMAIL_USER}>`;
+        this.sender = `"Panchal Samaj App" <${GMAIL_USER}>`;
     }
 
     async sendMail({ to, subject, text, html }) {
