@@ -1,7 +1,8 @@
 const prisma = require('../../db/prisma');
 const villageService = require('../../services/villageService');
 const { hashPassword } = require('../../utils/hash');
-
+const MailService = require('../../services/emailService')
+const mailService = new MailService();
 
 exports.createVillage = async (req, res, next) => {
     const {
@@ -22,13 +23,23 @@ exports.createVillage = async (req, res, next) => {
         chakola
     } = req.body;
 
-    if (!chakola) {
-        return res.status(400).json({ error: 'choklaId is required' });
+    if (!chakola || !chakola.id) {
+        return res.status(400).json({ error: 'Valid choklaId is required' });
     }
 
     try {
         const hashedPassword = await hashPassword(password);
+
+        // ✅ Run DB operations in transaction
         const result = await prisma.$transaction(async (tx) => {
+            const chokla = await tx.chakola.findUnique({
+                where: { id: chakola.id },
+            });
+
+            if (!chokla) {
+                throw new Error('Chokla with given ID not found');
+            }
+
             const village = await tx.village.create({
                 data: {
                     name,
@@ -44,16 +55,15 @@ exports.createVillage = async (req, res, next) => {
                     longitude,
                     latitude,
                     mobileNumber,
-                    choklaId: chakola.connect.id
+                    choklaId: chakola.id
                 }
             });
 
-            // Create user and link to the created village
             const user = await tx.user.create({
                 data: {
                     fullName: name,
                     email,
-                    choklaId: chakola.connect.id,
+                    choklaId: chakola.id,
                     passwordHash: hashedPassword,
                     globalRole: 'VILLAGE_MEMBER',
                     villageId: village.id
@@ -63,8 +73,25 @@ exports.createVillage = async (req, res, next) => {
             return { village, user };
         });
 
+        // ✅ Only runs if DB transaction was successful
+        await mailService.sendMail({
+            to: email,
+            subject: 'Welcome to the Panchal Samaj Portal - Village Registration!',
+            text: `Hello ${name},\n\nYour village account has been successfully created on the Panchal Samaj Portal.\n\nYou can log in at: https://panchalsamaj14.shreetripurasundari.com/login\n\nEmail: ${email}\nPassword: ${password}\n\nPlease keep this information secure and do not share it with unauthorized users.`,
+            html: `
+                <p>Hello <strong>${name}</strong>,</p>
+                <p>Your <strong>village account</strong> has been successfully created on the Panchal Samaj Portal.</p>
+                <p><strong>Login URL:</strong> <a href="https://panchalsamaj14.shreetripurasundari.com/login" target="_blank">Login</a></p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Password:</strong> ${password}</p>
+                <p>Please keep this information secure and do not share it with unauthorized individuals.</p>
+                <p>Thank you for being a part of the Panchal community!</p>
+            `
+        });
+
         res.status(201).json(result);
     } catch (err) {
+        console.error("Error in createVillage:", err);
         next(err);
     }
 };
