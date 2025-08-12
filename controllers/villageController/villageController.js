@@ -23,17 +23,16 @@ exports.createVillage = async (req, res, next) => {
         chakola
     } = req.body;
 
-    if (!chakola || !chakola.id) {
+    if (!chakola || !chakola.connect.id) {
         return res.status(400).json({ error: 'Valid choklaId is required' });
     }
-
     try {
         const hashedPassword = await hashPassword(password);
 
         // ✅ Run DB operations in transaction
         const result = await prisma.$transaction(async (tx) => {
             const chokla = await tx.chakola.findUnique({
-                where: { id: chakola.id },
+                where: { id: chakola.connect.id },
             });
 
             if (!chokla) {
@@ -55,7 +54,7 @@ exports.createVillage = async (req, res, next) => {
                     longitude,
                     latitude,
                     mobileNumber,
-                    choklaId: chakola.id
+                    choklaId: chakola.connect.id
                 }
             });
 
@@ -63,7 +62,7 @@ exports.createVillage = async (req, res, next) => {
                 data: {
                     fullName: name,
                     email,
-                    choklaId: chakola.id,
+                    choklaId: chakola.connect.id,
                     passwordHash: hashedPassword,
                     globalRole: 'VILLAGE_MEMBER',
                     villageId: village.id
