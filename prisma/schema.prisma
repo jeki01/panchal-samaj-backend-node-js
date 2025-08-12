@@ -180,7 +180,8 @@ model Person {
   boardOrUniversity   String?
   yearOfPassing       Int?
   fieldOfStudy        String?
-
+  educaionalState  String?
+  educationalDistrict String?
   // employment details 
   isEmployed               Boolean  @default(false)
   occupationType           String?

@@ -141,6 +141,8 @@ CREATE TABLE "person" (
     "boardOrUniversity" TEXT,
     "yearOfPassing" INTEGER,
     "fieldOfStudy" TEXT,
+    "educaionalState" TEXT,
+    "educationalDistrict" TEXT,
     "isEmployed" BOOLEAN NOT NULL DEFAULT false,
     "occupationType" TEXT,
     "employmentStatus" TEXT,
