@@ -2,65 +2,64 @@ const prisma = require('../db/prisma');
 
 exports.createFamily = async (data) => {
     if (!data || typeof data !== 'object') {
-        throw new Error("Invalid input. Data is missing or not an object.");
+        throw new Error("Invalid input: Data is missing or not an object.");
     }
+
+    if (!data.villageId || !data.chakolaId) {
+        return {
+            success: false,
+            error: {
+                message: "villageId and chakolaId are required.",
+                details: null
+            }
+        };
+    }
+
     try {
-        const result = await prisma.$transaction(async (tx) => {
-            const family = await tx.family.create({
-                data: {
-                    permanentAddress: data.permanentAddress || null,
-                    permanentFamilyState: data.permanentFamilyState,
-                    permanentFamilyDistrict: data.permanentFamilyDistrict,
-                    permanentFamilyPincode: data.permanentFamilyPincode,
-                    permanentFamilyVillage: data.permanentFamilyVillage,
-                    currentAddress: data.currentAddress,
-                    currentFamilyState: data.currentFamilyState,
-                    currentFamilyDistrict: data.currentFamilyDistrict,
-                    currentFamilyPincode: data.currentFamilyPincode,
-                    currentFamilyVillage: data.currentFamilyVillage,
-                    economicStatus: data.economicStatus,
-                    status: data.status || null,
-                    villageId: data.villageId,
-                    chakolaId: data.chakolaId,
-                    mukhiyaName: data.mukhiyaName,
-                    anyComment: data.anyComment || null,
-                    longitude: data.longitude,
-                    latitude: data.latitude
+        const family = await prisma.family.create({
+            data: {
+                mukhiyaName: data.mukhiyaName,
+                economicStatus: data.economicStatus || null,
+                anyComment: data.anyComment || null,
+                currentFamilyState: data.currentFamilyState || null,
+                currentFamilyDistrict: data.currentFamilyDistrict || null,
+                currentFamilyVillage: data.currentFamilyVillage || null,
+                currentFamilyPincode: data.currentFamilyPincode || null,
+                currentAddress: data.currentAddress || null,
+                permanentFamilyState: data.permanentFamilyState || null,
+                permanentFamilyDistrict: data.permanentFamilyDistrict || null,
+                permanentFamilyVillage: data.permanentFamilyVillage || null,
+                permanentFamilyPincode: data.permanentFamilyPincode || null,
+                permanentAddress: data.permanentAddress || null,
+                status: data.status || null,
+                latitude: data.latitude ?? null,
+                longitude: data.longitude ?? null,
+
+                // ✅ Correct relation connection
+                village: {
+                    connect: { id: data.villageId },
                 },
-            });
-
-
-            const membersWithFamilyId = data.members.map(({ ...member }) => {
-                return {
-                    ...member,
-                    dateOfBirth: new Date(member.dateOfBirth),
-                    familyId: family.id,
-                    villageId: family.villageId
-                };
-            });
-
-            await tx.person.createMany({
-                data: membersWithFamilyId,
-                skipDuplicates: true,
-            });
-
-            const persons = await tx.person.findMany({
-                where: { familyId: family.id },
-            });
-
-            return {
-                family,
-                persons,
-            };
+                chakola: {
+                    connect: { id: data.chakolaId },
+                },
+            },
         });
 
-        return { success: true, data: result };
+        return { success: true, data: { family } };
 
     } catch (error) {
-        console.error("Error creating family and members:", error);
-        return { success: false, error };
+        console.error("❌ Error creating family:", error.message);
+        return {
+            success: false,
+            error: {
+                message: "Failed to create family.",
+                details: error.message,
+            },
+        };
     }
 };
+
+
 
 
 exports.getFamilyById = async (id) => {

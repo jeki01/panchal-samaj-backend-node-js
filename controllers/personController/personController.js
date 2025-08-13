@@ -2,9 +2,20 @@ const personService = require('../../services/personService');
 
 exports.createPerson = async (req, res, next) => {
     try {
+        // Validate and convert dateOfBirth to ISO string if present
+        if (req.body.dateOfBirth) {
+            const dob = new Date(req.body.dateOfBirth);
+            if (isNaN(dob.getTime())) {
+                return res.status(400).json({ message: 'Invalid dateOfBirth format. Expected ISO-8601 DateTime.' });
+            }
+            req.body.dateOfBirth = dob.toISOString();
+        }
         const person = await personService.createPerson(req.body);
         res.status(201).json(person);
     } catch (err) {
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ message: err.message, errors: err.errors });
+        }
         next(err);
     }
 };
@@ -39,10 +50,17 @@ exports.updatePerson = async (req, res, next) => {
 
 exports.deletePerson = async (req, res, next) => {
     try {
-        await personService.deletePerson(req.params.id);
-        res.status(204).send();
+        const deleted = await personService.deletePerson(req.params.id);
+        if (!deleted) {
+            return res.status(404).json({ message: 'Person not found' });
+        }
+        res.status(200).json({ message: 'Person deleted successfully' });
     } catch (err) {
-        next(err);
+        // Handle Prisma "record not found" error
+        if (err.code === 'P2025') {
+            return res.status(404).json({ message: 'Person not found. The record may have already been deleted.' });
+        }
+        res.status(500).json({ message: err.message || 'An error occurred while deleting the person.' });
     }
 };
 

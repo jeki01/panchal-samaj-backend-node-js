@@ -1,12 +1,69 @@
 const familyService = require('../../services/familyService');
+const prisma = require('../../db/prisma');
 
+// Create a family (Express route handler)
 exports.createFamily = async (req, res, next) => {
     try {
-        const family = await familyService.createFamily(req.body);
-        res.status(201).json({ success: true, data: family });
-    } catch (err) {
-        console.error("Error in createFamily controller:", err);
-        next(err);
+        const data = req.body;
+
+        // Validate required fields
+        if (!data?.mukhiyaName) {
+            return res.status(400).json({
+                success: false,
+                error: { message: '`mukhiyaName` is required.' }
+            });
+        }
+        if (!data?.villageId) {
+            return res.status(400).json({
+                success: false,
+                error: { message: '`villageId` is required.' }
+            });
+        }
+        if (!data?.chakolaId) {
+            return res.status(400).json({
+                success: false,
+                error: { message: '`chakolaId` is required.' }
+            });
+        }
+
+        // Create the family using only fields from the Prisma schema
+        const family = await prisma.family.create({
+            data: {
+                mukhiyaName: data.mukhiyaName,
+                status: data.status,
+                economicStatus: data.economicStatus,
+                villageId: data.villageId,
+                chakolaId: data.chakolaId,
+                createdDate: data.createdDate ? new Date(data.createdDate) : undefined,
+                updatedDate: data.updatedDate ? new Date(data.updatedDate) : undefined,
+                longitude: data.longitude ?? null,
+                latitude: data.latitude ?? null,
+                anyComment: data.anyComment || null,
+                permanentFamilyDistrict: data.permanentFamilyDistrict || null,
+                permanentFamilyState: data.permanentFamilyState || null,
+                permanentFamilyPincode: data.permanentFamilyPincode || null,
+                permanentAddress: data.permanentAddress || null,
+                permanentFamilyVillage: data.permanentFamilyVillage || null,
+                currentFamilyDistrict: data.currentFamilyDistrict || null,
+                currentFamilyState: data.currentFamilyState || null,
+                currentFamilyPincode: data.currentFamilyPincode || null,
+                currentAddress: data.currentAddress || null,
+                currentFamilyVillage: data.currentFamilyVillage || null,
+            },
+        });
+        return res.status(201).json({
+            success: true,
+            data: family,
+        });
+    } catch (error) {
+        console.error('❌ Error in createFamily:', error);
+        return res.status(500).json({
+            success: false,
+            error: {
+                message: 'Failed to create family.',
+                details: error.message || error.toString(),
+            },
+        });
     }
 };
 
