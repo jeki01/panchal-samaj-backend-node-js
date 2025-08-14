@@ -1,5 +1,8 @@
 const personService = require('../../services/personService');
 const { Prisma } = require('@prisma/client');
+const MailService = require('../../services/emailService'); // Adjust the path as necessary
+const mailService = new MailService();
+
 exports.createPerson = async (req, res, next) => {
     try {
         // Validate and convert dateOfBirth to ISO string if present
@@ -11,6 +14,25 @@ exports.createPerson = async (req, res, next) => {
             req.body.dateOfBirth = dob.toISOString();
         }
         const person = await personService.createPerson(req.body);
+        if (req.body.email) {
+            try {
+                await mailService.sendMail({
+                    to: req.body.email,
+                    subject: 'Welcome to Panchal Samaj App!',
+                    text: `Dear ${req.body.firstName || 'Member'},\n\nWelcome to the Panchal Samaj App! Your ID is: ${person._id}\n\nThank you for joining us!`,
+                    html: `
+        <p>Dear <strong>${req.body.firstName || 'Member'}</strong>,</p>
+        <p>Welcome to the <strong>Panchal Samaj App</strong>!</p>
+        <p><strong>Your ID:</strong> ${person._id}</p>
+        <p>Thank you for joining us!</p>
+    `,
+                });
+            } catch (emailErr) {
+                console.error("⚠️ Failed to send welcome email:", emailErr.message);
+                // Don't fail the whole request just because of email issue
+            }
+        }
+
         res.status(201).json(person);
     } catch (err) {
         if (err.name === 'ValidationError') {
