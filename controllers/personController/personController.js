@@ -21,12 +21,46 @@ exports.createPerson = async (req, res, next) => {
                     subject: 'Welcome to Panchal Samaj App!',
                     text: `Dear ${req.body.firstName || 'Member'},\n\nWelcome to the Panchal Samaj App! Your ID is: ${person._id}\n\nThank you for joining us!`,
                     html: `
-        <p>Dear <strong>${req.body.firstName || 'Member'}</strong>,</p>
-        <p>Welcome to the <strong>Panchal Samaj App</strong>!</p>
-        <p><strong>Your ID:</strong> ${person._id}</p>
-        <p>Thank you for joining us!</p>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background-color: #f9f9f9; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <div style="text-align: center; padding-bottom: 20px;">
+            <h2 style="color: #4CAF50; margin: 0;">Panchal Samaj App</h2>
+            <p style="color: #777; font-size: 14px;">Connecting the Community</p>
+        </div>
+
+        <div style="background-color: #fff; padding: 20px; border-radius: 6px;">
+            <p style="font-size: 16px;">Dear <strong>${req.body.firstName || 'Member'}</strong>,</p>
+            
+            <p style="font-size: 15px; line-height: 1.6;">
+                Welcome to the <strong>Panchal Samaj App</strong>! We're excited to have you join our community.
+            </p>
+
+            <p style="font-size: 15px; line-height: 1.6;">
+                <strong style="color: #4CAF50;">Your Member ID:</strong><br>
+                <span style="font-size: 18px; color: #333;">${person.id}</span>
+            </p>
+
+            <p style="font-size: 15px; line-height: 1.6;">
+                You can now connect with fellow members, access events, and stay informed with community updates.
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" style="background-color: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                    Visit Panchal Samaj App
+                </a>
+            </div>
+
+            <p style="font-size: 14px; color: #888;">
+                If you have any questions, feel free to reply to this email.
+            </p>
+        </div>
+
+        <div style="text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;">
+            &copy; ${new Date().getFullYear()} Panchal Samaj. All rights reserved.
+        </div>
+    </div>
     `,
                 });
+
             } catch (emailErr) {
                 console.error("⚠️ Failed to send welcome email:", emailErr.message);
                 // Don't fail the whole request just because of email issue
