@@ -44,7 +44,7 @@ exports.createPerson = async (req, res, next) => {
             </p>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="#" style="background-color: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+                <a href="https://panchalsamaj14.shreetripurasundari.com" style="background-color: #4CAF50; color: #fff; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold;">
                     Visit Panchal Samaj App
                 </a>
             </div>
