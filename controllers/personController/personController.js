@@ -1,5 +1,5 @@
 const personService = require('../../services/personService');
-
+const { Prisma } = require('@prisma/client');
 exports.createPerson = async (req, res, next) => {
     try {
         // Validate and convert dateOfBirth to ISO string if present
@@ -39,12 +39,44 @@ exports.getAllPersons = async (req, res, next) => {
     }
 };
 
+
+
 exports.updatePerson = async (req, res, next) => {
     try {
-        const person = await personService.updatePerson(req.params.id, req.body);
-        res.json(person);
+        const { id } = req.params;
+        const data = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: 'Missing person ID' });
+        }
+
+        // ✅ Validate and normalize dateOfBirth
+        if (data.dateOfBirth) {
+            const dob = new Date(data.dateOfBirth);
+            if (isNaN(dob.getTime())) {
+                return res.status(400).json({
+                    message: 'Invalid dateOfBirth format. Expected ISO-8601 DateTime.',
+                });
+            }
+            data.dateOfBirth = dob.toISOString();
+        }
+
+        const person = await personService.updatePerson(id, data);
+
+        res.status(200).json(person);
     } catch (err) {
-        next(err);
+        // ✅ Prisma-specific errors
+        if (err instanceof Prisma.PrismaClientValidationError) {
+            return res.status(400).json({ message: 'Validation error', error: err.message });
+        }
+
+        if (err instanceof Prisma.PrismaClientKnownRequestError) {
+            return res.status(400).json({ message: 'Database error', error: err.message });
+        }
+
+        // ✅ Catch-all for unexpected errors
+        console.error('Unexpected error in updatePerson:', err);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 
