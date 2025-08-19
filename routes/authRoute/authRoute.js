@@ -6,7 +6,6 @@ const authenticate = require('../../middlewares/authMiddleware');
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/users', authController.listOfallUsers);
-
 router.post('/logout', authenticate, authController.logout);
-
-module.exports = router;
+router.put('/:userId/toggle-status', authController.toggleUserStatus);
+module.exports = router; 
