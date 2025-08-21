@@ -1,9 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
-const { hashPassword, comparePassword } = require('../../utils/hash');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const { hashPassword, comparePassword } = require('../../utils/hash');
 const {
     findUserByEmail,
     createUser,
@@ -55,46 +53,35 @@ const register = async (req, res) => {
     }
 };
 
-
 const login = async (req, res) => {
     const { email, password } = req.body;
-
     try {
         const user = await findUserByEmail(email);
-        if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-        if (!user.isActive) return res.status(403).json({ message: 'Account is deactivated.' });
-
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+        if (!user.isActive) {
+            return res.status(403).json({ message: 'Account is deactivated. Please contact the administrator.' });
+        }
         const isMatch = await comparePassword(password, user.passwordHash);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-
-        // Generate token + sessionId
         const token = jwt.sign(
             { userId: user.id, role: user.globalRole, villageId: user.villageId },
             JWT_SECRET,
             { expiresIn: '1h' }
         );
-        const sessionId = uuidv4();
-
-        // Invalidate old session by overwriting
-        await updateUserRefreshToken(user.id, token, {
-            sessionId,
-            lastLogin: new Date()
-        });
-
-        // Set HttpOnly cookie
-        res.cookie("sessionId", sessionId, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 1000 * 60 * 60 // 1 hour
-        });
-
+        if (!token) {
+            return res.status(500).json({ message: 'Failed to generate token' });
+        }
+        await updateUserRefreshToken(user.id, token, { lastLogin: new Date() });
         res.json({
-            message: "Login successful",
             token,
             userId: user.id,
-            email: user.email,
             role: user.globalRole,
+            email: user.email,
             choklaId: user.choklaId,
             villageId: user.villageId
         });
@@ -103,11 +90,92 @@ const login = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const expiry = new Date(Date.now() + 10 * 60 * 1000); // valid 10 min
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { resetOtp: otp, otpExpiry: expiry, otpVerified: false }
+        });
+
+        await mailService.sendMail({
+            to: email,
+            subject: "Reset your password - Panchal Samaj Portal",
+            text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
+        });
+
+        res.json({ message: "OTP sent to email" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+const resetPassword = async (req, res) => {
+    const { email, newPassword } = req.body;
+
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (!user.otpVerified) {
+            return res.status(400).json({ message: "OTP not verified" });
+        }
+
+        const hashed = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                passwordHash: hashed,
+                resetOtp: null,
+                otpExpiry: null,
+                otpVerified: false
+            }
+        });
+
+        res.json({ message: "Password reset successful" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+const verifyOtp = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.resetOtp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+        if (user.otpExpiry < new Date()) {
+            return res.status(400).json({ message: "OTP expired" });
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { otpVerified: true }
+        });
+
+        res.json({ message: "OTP verified successfully" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 const logout = async (req, res) => {
     const userId = req.user?.userId;
+
     if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
+
     try {
         await clearUserRefreshToken(userId, { lastLogout: new Date() });
         res.json({ message: 'Logged out successfully' });
@@ -183,93 +251,15 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-
-    try {
-        const user = await findUserByEmail(email);
-        if (!user) return res.status(404).json({ message: 'User not found' });
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-        const expiry = new Date(Date.now() + 10 * 60 * 1000); // valid 10 min
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { resetOtp: otp, otpExpiry: expiry, otpVerified: false }
-        });
-
-        await mailService.sendMail({
-            to: email,
-            subject: "Reset your password - Panchal Samaj Portal",
-            text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
-        });
-
-        res.json({ message: "OTP sent to email" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-
-const resetPassword = async (req, res) => {
-    const { email, newPassword } = req.body;
-
-    try {
-        const user = await findUserByEmail(email);
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        if (!user.otpVerified) {
-            return res.status(400).json({ message: "OTP not verified" });
-        }
-
-        const hashed = await hashPassword(newPassword);
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                passwordHash: hashed,
-                resetOtp: null,
-                otpExpiry: null,
-                otpVerified: false
-            }
-        });
-
-        res.json({ message: "Password reset successful" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-
-const verifyOtp = async (req, res) => {
-    const { email, otp } = req.body;
-    try {
-        const user = await findUserByEmail(email);
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        if (user.resetOtp !== otp) {
-            return res.status(400).json({ message: "Invalid OTP" });
-        }
-        if (user.otpExpiry < new Date()) {
-            return res.status(400).json({ message: "OTP expired" });
-        }
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { otpVerified: true }
-        });
-
-        res.json({ message: "OTP verified successfully" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-
 module.exports = {
     register,
     login,
     logout,
     listOfallUsers,
     toggleUserStatus,
-    forgotPassword, resetPassword, verifyOtp
+    verifyOtp,
+    forgotPassword,
+    resetPassword
 };
+
+
