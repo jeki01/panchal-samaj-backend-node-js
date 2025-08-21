@@ -46,8 +46,17 @@ model User {
   mobileNumber String?
   village      Village?   @relation(fields: [villageId], references: [id])
 
+  // 🔹 Session Management
+  sessionId    String?    // current session ID (for single-device login)
+
+  // 🔹 Forgot Password / OTP
+  resetOtp     String?    // OTP value sent to user
+  otpExpiry    DateTime?  // when OTP expires
+  otpVerified  Boolean    @default(false) // mark after successful OTP verification
+
   @@map("users")
 }
+
 
 model Chakola {
   id            String   @id @default(uuid())

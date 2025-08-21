@@ -14,7 +14,7 @@ const familyRoutes = require('../routes/familyRoutes/familyRoutes');
 const villageRoutes = require('../routes/villageRoutes/villageRoute');
 const authRoute = require('../routes/authRoute/authRoute');
 const usersRoute = require('../routes/usersRoute/usersRoute');
-
+const backupRoute = require('../routes/backupRoute/backupRoute');
 // App setup
 const app = express();
 const corsOptions = { origin: '*' };
@@ -31,6 +31,8 @@ app.use('/family', familyRoutes);
 app.use('/person', personRoutes);
 app.use('/api/auth', authRoute);
 app.use('/user', usersRoute);
+app.use('/', backupRoute);
+
 
 // Root route
 app.get('/', (req, res) => {
