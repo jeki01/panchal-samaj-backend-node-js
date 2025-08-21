@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const { hashPassword, comparePassword } = require('../../utils/hash');
 const {
     findUserByEmail,
@@ -83,6 +85,85 @@ const login = async (req, res) => {
             choklaId: user.choklaId,
             villageId: user.villageId
         });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+        const expiry = new Date(Date.now() + 10 * 60 * 1000); // valid 10 min
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { resetOtp: otp, otpExpiry: expiry, otpVerified: false }
+        });
+
+        await mailService.sendMail({
+            to: email,
+            subject: "Reset your password - Panchal Samaj Portal",
+            text: `Your OTP is: ${otp}. It is valid for 10 minutes.`,
+        });
+
+        res.json({ message: "OTP sent to email" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+const resetPassword = async (req, res) => {
+    const { email, newPassword } = req.body;
+
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (!user.otpVerified) {
+            return res.status(400).json({ message: "OTP not verified" });
+        }
+
+        const hashed = await hashPassword(newPassword);
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                passwordHash: hashed,
+                resetOtp: null,
+                otpExpiry: null,
+                otpVerified: false
+            }
+        });
+
+        res.json({ message: "Password reset successful" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+const verifyOtp = async (req, res) => {
+    const { email, otp } = req.body;
+    try {
+        const user = await findUserByEmail(email);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.resetOtp !== otp) {
+            return res.status(400).json({ message: "Invalid OTP" });
+        }
+        if (user.otpExpiry < new Date()) {
+            return res.status(400).json({ message: "OTP expired" });
+        }
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { otpVerified: true }
+        });
+
+        res.json({ message: "OTP verified successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -175,5 +256,8 @@ module.exports = {
     login,
     logout,
     listOfallUsers,
-    toggleUserStatus
+    toggleUserStatus,
+    verifyOtp,
+    forgotPassword,
+    resetPassword
 };
