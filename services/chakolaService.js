@@ -1,8 +1,64 @@
 const prisma = require('../db/prisma');
 
 exports.fetchAllChakolas = async () => {
-    return await prisma.chakola.findMany();
+    try {
+        const chakolas = await prisma.chakola.findMany({
+            include: {
+                villages: {
+                    include: {
+                        _count: {
+                            select: { families: true },
+                        },
+                        families: {
+                            select: {
+                                _count: {
+                                    select: { Person: true },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return chakolas.map((chakola) => {
+            const villageCount = chakola.villages.length;
+            const familyCount = chakola.villages.reduce(
+                (sum, village) => sum + village._count.families,
+                0
+            );
+            const memberCount = chakola.villages.reduce(
+                (sum, village) =>
+                    sum +
+                    village.families.reduce(
+                        (familySum, family) => familySum + family._count.Person,
+                        0
+                    ),
+                0
+            );
+
+            return {
+                id: chakola.id,
+                name: chakola.name,
+                adhyaksh: chakola.adhyaksh,
+                contactNumber: chakola.contactNumber,
+                state: chakola.state,
+                district: chakola.district,
+                villageName: chakola.villageName,
+                createdDate: chakola.createdDate,
+                updatedDate: chakola.updatedDate,
+                villageCount,
+                familyCount,
+                memberCount,
+            };
+        });
+    } catch (error) {
+        console.error("Error fetching chakolas:", error);
+        throw new Error("Unable to fetch chakola data.");
+    }
 };
+
+
 
 exports.fetchChokhlaById = async (id) => {
     try {

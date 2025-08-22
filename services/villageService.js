@@ -102,55 +102,69 @@ exports.getVillageById = async (id) => {
     };
 };
 
-exports.getAllVillages = async (query) => {
-    const {
-        page = 1,
-        limit = 10,
-        name,
-        district,
-        state,
-        tehsil,
-        isVillageHaveSchool,
-        isVillageHaveCommunityHall,
-        isVillageHavePrimaryHealthCare,
-        choklaId,
-    } = query;
-
-    const skip = (page - 1) * limit;
-    const where = {};
-
-    if (name) where.name = { contains: name, mode: 'insensitive' };
-    if (district) where.district = { contains: district, mode: 'insensitive' };
-    if (state) where.state = { contains: state, mode: 'insensitive' };
-    if (tehsil) where.tehsil = { contains: tehsil, mode: 'insensitive' };
-    if (choklaId) where.choklaId = choklaId;
-    if (isVillageHaveSchool !== undefined) where.isVillageHaveSchool = isVillageHaveSchool === 'true';
-    if (isVillageHaveCommunityHall !== undefined) where.isVillageHaveCommunityHall = isVillageHaveCommunityHall === 'true';
-    if (isVillageHavePrimaryHealthCare !== undefined) where.isVillageHavePrimaryHealthCare = isVillageHavePrimaryHealthCare === 'true';
-
-    const [villages, total] = await Promise.all([
-        prisma.village.findMany({
-            where,
-            skip: Number(skip),
-            take: Number(limit),
-            include: {
-                families: true,
-                chakola: true,
+exports.getAllVillages = async () => {
+    const villages = await prisma.village.findMany({
+        select: {
+            id: true,
+            name: true,
+            villageMemberName: true,
+            mobileNumber: true,
+            email: true,
+            tehsil: true,
+            district: true,
+            state: true,
+            createdDate: true,
+            chakola: {
+                select: {
+                    name: true
+                }
             },
-        }),
-        prisma.village.count({ where }),
-    ]);
-
-    return {
-        data: villages,
-        pagination: {
-            total,
-            page: Number(page),
-            limit: Number(limit),
-            pages: Math.ceil(total / limit),
+            _count: {
+                select: {
+                    families: true
+                }
+            },
+            families: {
+                select: {
+                    id: true, // or other fields you need from families
+                    _count: {
+                        select: {
+                            Person: true
+                        }
+                    }
+                }
+            }
         }
-    };
+    });
+
+    // Transform the data to match the interface
+    const result = villages.map(village => {
+        const memberCount = village.families.reduce(
+            (sum, family) => sum + family._count.Person,
+            0
+        );
+
+        return {
+            id: village.id,
+            name: village.name,
+            villageMemberName: village.villageMemberName || '',
+            mobileNumber: village.mobileNumber || '',
+            email: village.email || '',
+            tehsil: village.tehsil || '',
+            district: village.district || '',
+            state: village.state || '',
+            families: village.families,
+            chakolaName: village.chakola?.name || '',
+            familyCount: village._count.families,
+            memberCount: memberCount,
+            createdDate: village.createdDate.toISOString()
+        };
+    });
+
+    return { data: result };
 };
+
+
 
 exports.updateVillage = async (id, data) => {
     return await prisma.village.update({
@@ -167,8 +181,47 @@ exports.deleteVillage = async (id) => {
 
 
 exports.getVillageWithChokhlaId = async (chokhlaID) => {
+    try {
+        const villages = await prisma.village.findMany({
+            where: { choklaId: chokhlaID },
+            include: {
+                families: {
+                    select: {
+                        _count: {
+                            select: { Person: true }
+                        }
+                    }
+                }
+            }
+        });
 
-    return await prisma.village.findMany({
-        where: { choklaId: chokhlaID }
-    })
-}  
+        return villages.map((village) => {
+            const familyCount = village.families.length;
+            const personCount = village.families.reduce(
+                (sum, family) => sum + family._count.Person,
+                0
+            );
+
+            return {
+                id: village.id,
+                name: village.name,
+                villageMemberName: village.villageMemberName,
+                mobileNumber: village.mobileNumber,
+                email: village.email,
+                tehsil: village.tehsil,
+                district: village.district,
+                state: village.state,
+                age: village.age,
+                isVillageHaveSchool: village.isVillageHaveSchool,
+                isVillageHavePrimaryHealthCare: village.isVillageHavePrimaryHealthCare,
+                isVillageHaveCommunityHall: village.isVillageHaveCommunityHall,
+                createdDate: village.createdDate,
+                familyCount,
+                personCount
+            };
+        });
+    } catch (error) {
+        console.error("Error fetching villages by chokhlaId:", error);
+        throw new Error("Unable to fetch villages for the given chokhla.");
+    }
+};
