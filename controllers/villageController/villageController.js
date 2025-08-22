@@ -110,11 +110,16 @@ exports.getVillageById = async (req, res, next) => {
 exports.getAllVillages = async (req, res, next) => {
     try {
         const result = await villageService.getAllVillages(req.query);
-        res.json(result);
+        res.status(200).json(result);
     } catch (err) {
-        next(err);
+        res.status(err.statusCode || 500).json({
+            success: false,
+            message: err.message || 'Internal Server Error',
+        });
+
     }
 };
+
 
 exports.updateVillage = async (req, res, next) => {
     try {

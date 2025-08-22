@@ -114,8 +114,10 @@ exports.getAllVillages = async () => {
             district: true,
             state: true,
             createdDate: true,
+
             chakola: {
                 select: {
+                    id: true,
                     name: true
                 }
             },
@@ -155,6 +157,7 @@ exports.getAllVillages = async () => {
             state: village.state || '',
             families: village.families,
             chakolaName: village.chakola?.name || '',
+            choklaId: village.chakola?.id || null,
             familyCount: village._count.families,
             memberCount: memberCount,
             createdDate: village.createdDate.toISOString()
